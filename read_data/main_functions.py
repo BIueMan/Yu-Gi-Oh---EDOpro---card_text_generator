@@ -16,7 +16,7 @@ def get_card_mapping_data(file_path: str)->Dict[str, Dict[str, int]]:
     """
     try:
         with open(file_path, 'r') as file:
-            lines = file.readlines()
+            code = file.readlines()
     except FileNotFoundError:
         print(f"File not found: {file_path}")
         return None
@@ -25,8 +25,9 @@ def get_card_mapping_data(file_path: str)->Dict[str, Dict[str, int]]:
         return None
     
     # Remove Lua comments and parse the Lua script to extract card data mapping
-    lines = remove_comments_lua(lines)
-    return categorize_strings(lines)
+    code = remove_lua_comments(code)
+    params = exec_code_and_collect_vars(code)
+    return achieve_type_by_name(params)
 
 class cards_data():
     def __init__(self, cards_data_path: str = 'data/cards_text/datas.csv',
@@ -42,7 +43,7 @@ class cards_data():
     def read_card(self, card_loc: int)->str:
         data = self.cards_data.iloc[card_loc]
         text = self.cards_text.iloc[card_loc]
-        map = self.cards_data_mapping['Types of cards']
+        map = self.cards_data_mapping['TYPE']
         
         return 'in testing'
     

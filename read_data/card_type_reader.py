@@ -1,8 +1,9 @@
 from typing import List, Dict
+from collections import defaultdict
 
-def remove_comments_lua(strings: List[str]) -> List[str]:
+def remove_lua_comments(strings: List[str]) -> List[str]:
     """
-    Removes comments from Lua code in a list of strings.
+    Removes comments from Lua code
 
     Args:
         strings (List[str]): List of strings representing Lua code.
@@ -11,91 +12,41 @@ def remove_comments_lua(strings: List[str]) -> List[str]:
         List[str]: List of strings with comments removed.
     """
     for idx, line in enumerate(strings):
-        split_list = line.split('--')
-        strings[idx] = line if not split_list[0].strip() else split_list[0]
+        strings[idx] = line.split('--')[0]
     
     return strings
 
-def string_to_dict(strings: List[str], categorize: Dict[str, Dict[str, int]]) -> Dict[str, int]:
+def exec_code_and_collect_vars(code: List[str]) -> Dict[str, int]:
     """
-    Converts a list of string representations of key-value pairs to a dictionary.
-    
-    Example:
-    ```python
-    data = [
-        "apple = 0x1A",
-        "banana = 0x2B"
-    ]
-    result = string_to_dict(data)
-    # result will be {'apple': 26, 'banana': 43}
-    ```
+    Executes a script and collects variables into a dictionary.
 
     Args:
-        strings (List[str]): List of strings with key-value pairs.
+        code (List[str]): List of strings representing Lua/python code.
 
     Returns:
-        Dict[str, int]: Dictionary with keys and integer values.
+        Dict[str, int]: A dictionary containing variable names as keys and their values as values.
     """
-    combine_data = {}
-    for key in categorize.keys():
-        combine_data.update(categorize[key])
-        
-    result_dict = {}
-    
-    for line in strings:
-        parts = line.split("=")
-        if len(parts) == 2:
-            name = parts[0].strip()
-            value = parts[1].strip()
-            try:
-                value = int(value,16)
-            except:
-                splitted = value.split("|")
-                value = 0
-                for value_name in splitted: value |= {**combine_data, **result_dict}[value_name]
-                
-            result_dict[name] = value
+    param_dict = {}
+    exec('\n'.join(code[:-2]), globals(), param_dict)
+    return param_dict
 
-    return result_dict
-
-def categorize_strings(strings: List[str]) -> Dict[str, Dict[str, int]]:
+def achieve_type_by_name(type: Dict[str, int]) -> Dict[str, Dict[str, int]]:
     """
-    Categorizes and converts a list of strings containing Lua code into a nested dictionary.
-    
-    Example:
-    ```python
-    lua_code = [
-        "-- Fruit data",
-        "apple = 0x1A",
-        "banana = 0x2B",
-        "-- Colors",
-        "red = 0xFF0000",
-        "green = 0x00FF00"
-    ]
-    result = categorize_strings(lua_code)
-    # result will be {'Fruit data': {'apple': 26, 'banana': 43}, 'Colors': {'red': 16711680, 'green': 65280}}
-    ```
+    Achieves the type of a card by name.
 
     Args:
-        strings (List[str]): List of Lua code strings.
+        type (Dict[str, int]): A dictionary where keys are variable names and values are integers.
 
     Returns:
-        Dict[str, Dict[str, int]]: Nested dictionary with categories and key-value pairs.
+        Dict[str, Dict[str, int]]: A nested dictionary where keys are categories and values are sub-dictionaries
+        containing variables and their values.
     """
-    categorize = {}
-    current_key = None
-    current_lines = []
+    result = defaultdict(dict)
 
-    for line in strings:
-        if line.startswith("--"):
-            if current_key:
-                categorize[current_key] = string_to_dict(current_lines, categorize)
-            current_key = line[2:].strip()
-            current_lines = []
-        else:
-            current_lines.append(line.strip())
+    for name, value in type.items():
+        parts = name.split('_')
+        if len(parts) > 1:
+            category, subcategory = parts[0], '_'.join(parts[1:])
+            result[category][subcategory] = value
 
-    if current_key:
-        categorize[current_key] = current_lines
-
-    return categorize
+    return result
