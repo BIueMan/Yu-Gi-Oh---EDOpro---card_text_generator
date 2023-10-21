@@ -45,8 +45,46 @@ class cards_data():
         text = self.cards_text.iloc[card_loc]
         map = self.cards_data_mapping['TYPE']
         
-        return 'in testing'
+        # get data about the card
+        atk = data.get('atk')
+        deff = data.get('def')
+        level = data.get('level')
+        race = data.get('race')
+        
+        race_map = self.cards_data_mapping['RACE']
+        race_list = [key for key in race_map.keys() if race_map[key] & data.get('race')  and key != 'ALL']
+        attribute_map = self.cards_data_mapping['ATTRIBUTE']
+        attribute_list = [key for key in attribute_map.keys() if attribute_map[key] & data.get('attribute')  and key != 'ALL']
+        type_map = self.cards_data_mapping['TYPE']
+        types_list = [key for key in type_map.keys() if type_map[key] & data.get('type') and key != 'ALL']
+        
+        def card_layout():
+            # add card type
+            card_layout = ""
+            card_layout += "card_name: {}\n".format(text.iloc[1])
+            card_layout += "type: [{}]\n".format(', '.join(types_list))
+            if 'MONSTER' in types_list:
+                card_layout += "race: [{}]\n".format(', '.join(race_list))
+                card_layout += "attribute: [{}]\n".format(', '.join(attribute_list))
+                card_layout += "level: {}\n".format(level)
+                card_layout += "atk: {}\n".format(atk)
+                card_layout += "def: {}\n".format(deff)
+            card_layout += "\n"
+            
+            # add main text effects
+            card_layout += "card_effect:\n{}\n\n".format(text.iloc[2])
+            
+            # add subtitle effects
+            for i, subtitle in enumerate(text.iloc[3:]):
+                if not isinstance(subtitle, str):
+                    break
+                card_layout += "subtitle_{}:\n{}\n\n".format(i+1, subtitle)
+            
+            return card_layout
+                
+        return card_layout()
     
 if __name__ == '__main__':
     cd = cards_data()
-    cd.read_card(0)
+    card_layout = cd.read_card(0)
+    print(card_layout)
